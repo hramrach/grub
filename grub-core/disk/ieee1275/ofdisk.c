@@ -206,10 +206,45 @@ dev_iterate_real (const char *name, const char *path)
   return;
 }
 
-static void
-dev_iterate (const struct grub_ieee1275_devalias *alias)
+typedef enum {
+  SCAN_FCP = 1,
+  SCAN_VSCSI = 1 << 1,
+  SCAN_SAS = 1 << 2,
+  SCAN_DEFAULT = SCAN_FCP | SCAN_VSCSI | SCAN_SAS,
+  SCAN_ALL = 0xffffffff
+} type_mask_t;
+
+typedef struct {
+  const char * name;
+  type_mask_t type;
+} type_map_t;
+
+type_map_t typemap[] = {
+  { "fcp", SCAN_FCP },
+  { "sas_ioa", SCAN_SAS },
+  { "sas", SCAN_SAS },
+  { "vscsi", SCAN_VSCSI },
+  { "scsi", SCAN_VSCSI },
+};
+
+
+static type_mask_t
+type_to_mask(const char * type)
 {
-  if (grub_strcmp (alias->type, "fcp") == 0)
+  unsigned i;
+  if (!type) return SCAN_DEFAULT;
+  if (!grub_strcmp (type, "all")) return SCAN_ALL;
+  for (i=0; i < sizeof(typemap) / sizeof(typemap[0]); i++)
+    if (!grub_strcmp (type, typemap[i].name))
+      return typemap[i].type;
+  return 0;
+}
+
+
+static void
+dev_iterate (const struct grub_ieee1275_devalias *alias, type_mask_t type_mask)
+{
+  if ((type_mask & SCAN_FCP) && (grub_strcmp (alias->type, "fcp") == 0))
   {
 
     /* If we are dealing with fcp devices, we need
@@ -324,7 +359,7 @@ dev_iterate (const struct grub_ieee1275_devalias *alias)
     return;
 
   }
-  else if (grub_strcmp (alias->type, "vscsi") == 0)
+  else if ((type_mask & SCAN_VSCSI) && (grub_strcmp (alias->type, "vscsi") == 0))
     {
       static grub_ieee1275_ihandle_t ihandle;
       struct set_color_args
@@ -378,7 +413,7 @@ dev_iterate (const struct grub_ieee1275_devalias *alias)
       grub_free (buf);
       return;
     }
-  else if (grub_strcmp (alias->type, "sas_ioa") == 0)
+  else if ((type_mask & SCAN_SAS) && (grub_strcmp (alias->type, "sas_ioa") == 0))
     {
       /* The method returns the number of disks and a table where
        * each ID is 64-bit long. Example of sas paths:
@@ -466,7 +501,7 @@ dev_iterate (const struct grub_ieee1275_devalias *alias)
     struct grub_ieee1275_devalias child;
 
     FOR_IEEE1275_DEVCHILDREN(alias->path, child)
-      dev_iterate (&child);
+      dev_iterate (&child, type_mask);
   }
 }
 
@@ -485,10 +520,11 @@ scan (void)
 static int
 grub_ofdisk_scan (const char * type)
 {
-  (void)type; /* FIXME do something about device types */
+  type_mask_t mask = type_to_mask(type);
   struct grub_ieee1275_devalias alias;
-  FOR_IEEE1275_DEVCHILDREN("/", alias)
-    dev_iterate (&alias);
+  if (mask)
+    FOR_IEEE1275_DEVCHILDREN("/", alias)
+      dev_iterate (&alias, mask);
 
   return 1;
 }
