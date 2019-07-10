@@ -147,6 +147,7 @@ ofdisk_hash_add (char *devpath, char *curcan)
   p = ofdisk_hash_add_real (devpath);
 
   grub_dprintf ("disk", "devpath = %s, canonical = %s\n", devpath, curcan);
+  grub_printf ("ofdisk %s(%s)\n", devpath, curcan);
 
   if (!curcan)
     {
