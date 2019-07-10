@@ -480,9 +480,17 @@ scan (void)
 	continue;
       dev_iterate_real (alias.name, alias.path);
     }
+}
 
+static int
+grub_ofdisk_scan (const char * type)
+{
+  (void)type; /* FIXME do something about device types */
+  struct grub_ieee1275_devalias alias;
   FOR_IEEE1275_DEVCHILDREN("/", alias)
     dev_iterate (&alias);
+
+  return 1;
 }
 
 static int
@@ -735,6 +743,7 @@ static struct grub_disk_dev grub_ofdisk_dev =
     .close = grub_ofdisk_close,
     .read = grub_ofdisk_read,
     .write = grub_ofdisk_write,
+    .disk_scan = grub_ofdisk_scan,
     .next = 0
   };
 

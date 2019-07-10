@@ -956,6 +956,11 @@ module = {
 };
 
 module = {
+  name = scan;
+  common = commands/scan.c;
+};
+
+module = {
   name = spkmodem;
   x86 = term/spkmodem.c;
   enable = x86;

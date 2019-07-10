@@ -79,6 +79,10 @@ struct grub_disk_dev
   int (*iterate) (grub_disk_dev_iterate_hook_t hook, void *hook_data,
 		  grub_disk_pull_t pull);
 
+  /* Scan bus for new devices.  Driver-specific type can be provided to scan
+   * only some devices.  */
+  int (*disk_scan) (const char * type);
+
   /* Open the device named NAME, and set up DISK.  */
   grub_err_t (*open) (const char *name, struct grub_disk *disk);
 
@@ -107,6 +111,7 @@ extern grub_disk_dev_t EXPORT_VAR (grub_disk_dev_list);
 
 struct grub_partition;
 
+typedef int (*grub_disk_drv_iterate_hook_t) (const grub_disk_dev_t, void *data);
 typedef void (*grub_disk_read_hook_t) (grub_disk_addr_t sector,
 				       unsigned offset, unsigned length,
 				       void *data);
@@ -190,6 +195,14 @@ grub_disk_dev_iterate (grub_disk_dev_iterate_hook_t hook, void *hook_data)
 	return 1;
 
   return 0;
+}
+
+static inline void
+grub_disk_drv_iterate (grub_disk_drv_iterate_hook_t hook, void *hook_data)
+{
+  grub_disk_dev_t p;
+  for (p = grub_disk_dev_list; p; p = p->next)
+    hook(p, hook_data);
 }
 
 grub_disk_t EXPORT_FUNC(grub_disk_open) (const char *name);
