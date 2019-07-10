@@ -67,6 +67,7 @@ library = {
   common = grub-core/commands/xnu_uuid.c;
   common = grub-core/commands/testload.c;
   common = grub-core/commands/ls.c;
+  common = grub-core/commands/scan.c;
   common = grub-core/disk/dmraid_nvidia.c;
   common = grub-core/disk/loopback.c;
   common = grub-core/disk/lvm.c;
